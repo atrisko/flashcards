@@ -1,18 +1,18 @@
 # Todo – Flashcard App
 
-Active task list. Architecture decisions → see `Planung.md`.
+Active task list. Architecture decisions → see `Planning.md`.
 
 ---
 
 ## 🚧 Step 0 – Project Setup (Maven)
-- [ ] Configure Java version in `pom.xml`
-- [ ] Add required dependencies (SQLite JDBC, Flyway, jBCrypt, Picocli, JUnit 5, SLF4J + Logback)
+- [x] Configure Java version in `pom.xml`
+- [x] Add required dependencies (SQLite JDBC, Flyway, jBCrypt, Picocli, JUnit 5, SLF4J + Logback)
 
 ---
 
 ## ✅ Step 1 – Domain Model (Walking Skeleton)
-- [ ] Create abstract class `Card` (fields: id, question, subject, createdAt, updatedAt)
-- [ ] Define abstract method `checkAnswer()`
+- [x] Create abstract class `Card` (fields: id, question, subject, createdAt, updatedAt)
+- [x] Define abstract method `checkAnswer()`
 - [ ] Implement `MultipleChoiceCard` (incl. `checkAnswer()` → automatic comparison)
 - [ ] Implement `OpenQuestion` (incl. `checkAnswer()` → show sample answer, user decides)
 - [ ] Create helper class `AnswerOption` (text + isCorrect)
