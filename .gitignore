@@ -1,0 +1,12 @@
+# Maven build-Verzeichnis
+/target/
+
+# IDE-spezifische Dateien (Antigravity IDE, IntelliJ, VS Code etc.)
+.idea/
+.vscode/
+*.iml
+*.iws
+.settings/
+.classpath
+.project
+

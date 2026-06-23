@@ -1,0 +1,74 @@
+# Todo – Flashcard App
+
+Active task list. Architecture decisions → see `Planung.md`.
+
+---
+
+## 🚧 Step 0 – Project Setup (Maven)
+- [ ] Configure Java version in `pom.xml`
+- [ ] Add required dependencies (SQLite JDBC, Flyway, jBCrypt, Picocli, JUnit 5, SLF4J + Logback)
+
+---
+
+## ✅ Step 1 – Domain Model (Walking Skeleton)
+- [ ] Create abstract class `Card` (fields: id, question, subject, createdAt, updatedAt)
+- [ ] Define abstract method `checkAnswer()`
+- [ ] Implement `MultipleChoiceCard` (incl. `checkAnswer()` → automatic comparison)
+- [ ] Implement `OpenQuestion` (incl. `checkAnswer()` → show sample answer, user decides)
+- [ ] Create helper class `AnswerOption` (text + isCorrect)
+
+---
+
+## ✅ Step 2 – Test Core Quiz (hardcoded, no service needed)
+- [ ] In `Main.java`: hardcode one `MultipleChoiceCard` and one `OpenQuestion`
+- [ ] Simple CLI loop: show question → read input → call `checkAnswer()` → print result
+- [ ] Manual test: does the core logic work for both types?
+
+---
+
+## 🗄️ Step 3 – Database
+- [ ] Set up Flyway (create migrations folder)
+- [ ] Write SQL migration: create all tables (`user`, `flashcard`, `flashcard_open`, `flashcard_mc`, `answer_options`, `user_card_progress`)
+- [ ] Set up SQLite connection (connection helper)
+- [ ] Define `CardRepository` interface
+- [ ] Implement `SQLiteCardRepository`
+
+---
+
+## 🃏 Step 4 – Card Service (CRUD)
+- [ ] Implement `CardService` (add, view, edit, delete)
+- [ ] CLI menu for card management
+
+---
+
+## 🎯 Step 5 – Quiz Service (complete)
+- [ ] Implement `QuizService`
+- [ ] User can configure: card count, subject filter, mixed mode
+- [ ] Replace hardcoded cards with real DB queries
+
+---
+
+## 📊 Step 6 – Reporting
+- [ ] Implement `ReportingService`
+- [ ] Session summary (correct/wrong, score)
+
+---
+
+## 🔁 Step 7 – Leitner Algorithm
+- [ ] Introduce box system (1–5)
+- [ ] Adapt quiz logic to Leitner principle (`next_review_at`, `leitner_box`)
+
+---
+
+## 👥 Step 8 – Multi-User / Authentication
+- [ ] Implement registration & login (`UserService`)
+- [ ] BCrypt password hashing (jBCrypt)
+- [ ] Session context (which user is logged in?)
+- [ ] i18n: set up `ResourceBundle` (`messages_de.properties` / `messages_en.properties`)
+- [ ] Ask language preference at registration, store in `user.language`
+
+---
+
+## 🖥️ Step 9 – UI (lowest priority)
+- [ ] Decide technology (Swing / JavaFX / web)
+- [ ] Build UI on top of existing service layer
