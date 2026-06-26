@@ -20,9 +20,9 @@ Active task list. Architecture decisions → see `Planning.md`.
 ---
 
 ## ✅ Step 2 – Test Core Quiz (hardcoded, no service needed)
-- [ ] In `Main.java`: hardcode one `MultipleChoiceCard` and one `OpenQuestion`
-- [ ] Simple CLI loop: show question → read input → call `checkAnswer()` → print result
-- [ ] Manual test: does the core logic work for both types?
+- [x] In `Main.java`: hardcode one `MultipleChoiceCard` and one `OpenQuestion`
+- [x] Simple CLI loop: show question → read input → call `checkAnswer()` → print result
+- [x] Manual test: does the core logic work for both types?
 
 ---
 
