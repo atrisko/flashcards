@@ -1,4 +1,4 @@
-package com.lernkarten.model;
+package com.flashcards.model;
 
 import java.util.ArrayList;
 import java.util.List;

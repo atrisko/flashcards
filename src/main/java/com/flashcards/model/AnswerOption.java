@@ -1,4 +1,4 @@
-package com.lernkarten.model;
+package com.flashcards.model;
 
 public class AnswerOption {
     private String text;
