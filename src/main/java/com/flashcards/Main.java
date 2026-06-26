@@ -15,22 +15,26 @@ public class Main {
         cardMultipleChoice.addAnswerOption("Madrid", false);
 
         OpenQuestionCard cardOpenQuestion = new OpenQuestionCard("What is the capital of France?", "Geography", "Paris");
-
+        
+        //Logic for Multiple Choice Cards
         System.out.println("Multiple Choice:");
         System.out.println("Question: " + cardMultipleChoice.getQuestion());
         System.out.println("Antworten:");
+        int index = 1;
         for (AnswerOption option : cardMultipleChoice.getAnswerOptions()) {
-            System.out.println(option.getText());
+            System.out.println(index + ". " + option.getText());
+            index++;
         }
-
         Scanner scanner = new Scanner(System.in);
         String userInputMC = scanner.nextLine();
+        userInputMC = userInputMC.replace(".","" );  
         if (cardMultipleChoice.checkAnswer(userInputMC)){
             System.out.println("Correct");
         } else {
             System.out.println("Incorrect");
         }
         
+        //Logic for Open Question Cards
         System.out.println("Open Question:");
         System.out.println("Question: " + cardOpenQuestion.getQuestion());
         System.out.println("Antwort: ");

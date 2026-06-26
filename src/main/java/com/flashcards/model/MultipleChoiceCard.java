@@ -15,10 +15,12 @@ public class MultipleChoiceCard extends Card {
 
     @Override // This method overrides the checkAnswer method in the Card class
     public boolean checkAnswer(String userInput) {
+        int index = 1;
       for (AnswerOption option : answerOptions){
-            if (userInput.equals(option.getText()) && option.isCorrect()) {
+            if (userInput.equals(String.valueOf(index)) && option.isCorrect()) {
                 return true;
             }
+            index++;
         }  
       return false; 
     }
