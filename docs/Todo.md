@@ -14,7 +14,7 @@ Active task list. Architecture decisions → see `Planning.md`.
 - [x] Create abstract class `Card` (fields: id, question, subject, createdAt, updatedAt)
 - [x] Define abstract method `checkAnswer()`
 - [x] Implement `MultipleChoiceCard` (incl. `checkAnswer()` → automatic comparison)
-- [ ] Implement `OpenQuestion` (incl. `checkAnswer()` → show sample answer, user decides)
+- [x] Implement `OpenQuestion` (incl. `checkAnswer()` → show sample answer, user decides)
 - [x] Create helper class `AnswerOption` (text + isCorrect)
 
 ---
