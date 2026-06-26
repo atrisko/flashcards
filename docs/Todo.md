@@ -13,7 +13,7 @@ Active task list. Architecture decisions → see `Planning.md`.
 ## ✅ Step 1 – Domain Model (Walking Skeleton)
 - [x] Create abstract class `Card` (fields: id, question, subject, createdAt, updatedAt)
 - [x] Define abstract method `checkAnswer()`
-- [ ] Implement `MultipleChoiceCard` (incl. `checkAnswer()` → automatic comparison)
+- [x] Implement `MultipleChoiceCard` (incl. `checkAnswer()` → automatic comparison)
 - [ ] Implement `OpenQuestion` (incl. `checkAnswer()` → show sample answer, user decides)
 - [ ] Create helper class `AnswerOption` (text + isCorrect)
 
