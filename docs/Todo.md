@@ -29,8 +29,8 @@ Active task list. Architecture decisions → see `Planning.md`.
 ## 🗄️ Step 3 – Database
 - [x] Set up Flyway (create migrations folder)
 - [x] Write SQL migration: create all tables (`user`, `flashcard`, `flashcard_open`, `flashcard_mc`, `answer_options`, `user_card_progress`)
-- [ ] Set up SQLite connection (connection helper)
-- [ ] Define `CardRepository` interface
+- [x] Set up SQLite connection (connection helper)
+- [x] Define `CardRepository` interface
 - [ ] Implement `SQLiteCardRepository`
 
 ---
