@@ -9,13 +9,15 @@ public class OpenQuestionCard extends Card{
     }
 
     @Override
-    public boolean checkAnswer(String userInput){
+    public AnswerResult checkAnswer(String userInput){
         if (userInput.equalsIgnoreCase("yes")) {
-            return true; // Correct answer
+            return AnswerResult.CORRECT; // Correct answer
         } else if (userInput.equalsIgnoreCase("no")) {
-            return false; // Incorrect answer
+            return AnswerResult.WRONG; // Incorrect answer
         }
-        return false;
+
+        return AnswerResult.INVALID_INPUT;
+        
     }
 
     public String getAnswer() {

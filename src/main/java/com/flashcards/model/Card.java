@@ -19,7 +19,7 @@ public abstract class Card {
     }
 
     // Abstract method to be implemented by subclasses
-    public abstract boolean checkAnswer(String userInput);
+    public abstract AnswerResult checkAnswer(String userInput);
 
     // Getters for the Card class
     public Long getId() {
