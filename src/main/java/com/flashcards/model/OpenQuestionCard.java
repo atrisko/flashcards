@@ -27,4 +27,9 @@ public class OpenQuestionCard extends Card{
     public void setAnswer(String answer) {
         this.answer = answer;
     }
+
+    @Override
+    public String getType() {
+        return "OPEN";
+    }
 }

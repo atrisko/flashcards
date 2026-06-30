@@ -39,4 +39,9 @@ public class MultipleChoiceCard extends Card {
     public void setAnswerOptions(List<AnswerOption> answerOptions) {
         this.answerOptions = answerOptions;
     }
+
+    @Override
+    public String getType() {
+        return "MC";
+    }
 }

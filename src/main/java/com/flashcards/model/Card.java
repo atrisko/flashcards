@@ -41,4 +41,6 @@ public abstract class Card {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public abstract String getType();
 }
