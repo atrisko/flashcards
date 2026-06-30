@@ -51,5 +51,14 @@ public abstract class Card {
         this.createdBy = createdBy;
     }
 
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+
     public abstract String getType();
 }
