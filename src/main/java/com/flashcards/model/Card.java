@@ -10,6 +10,7 @@ public abstract class Card {
     private String subject;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
 
     // Constructor for the Card class
     public Card(String question, String subject) {
@@ -40,6 +41,14 @@ public abstract class Card {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Long getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
     }
 
     public abstract String getType();
