@@ -14,18 +14,107 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 
 public class SQLiteCardRepo implements CardRepository {
     
     @Override
     public Optional<Card> findById(int id) {
-        throw new UnsupportedOperationException("Unimplemented method 'findById'");
+       try (
+            Connection conn = ConnectionHelper.getConnection();
+            PreparedStatement stmnt = conn.prepareStatement("SELECT * FROM flashcards WHERE id = ?");
+            
+            ){
+            stmnt.setInt(1, id);
+            ResultSet rs = stmnt.executeQuery();
+            if (!rs.next()) {
+                return Optional.empty();
+            }
+
+            Card card = null;
+            
+            String type = rs.getString("type");
+            
+            //logic for OpenQuestionCard
+            if ("OPEN".equals(type)){
+                try (
+                    PreparedStatement stmnt2 = conn.prepareStatement("SELECT sample_answer FROM flashcards_open WHERE card_id = ?")
+                    ){
+                        stmnt2.setInt(1, id);
+                        ResultSet rs2 = stmnt2.executeQuery();
+                        rs2.next();
+                        String sampleAnswer = rs2.getString("sample_answer");
+                        card = new OpenQuestionCard(
+                            rs.getString("question"),
+                            rs.getString("subject"),
+                            sampleAnswer
+                        );
+                        
+                    }
+
+                    //Set other fields
+                    if (rs.getString("created_at") != null){
+                        card.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
+                    }
+                    if (rs.getString("updated_at") != null){
+                        card.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
+                    }
+                    
+                    
+            }
+            
+            //logic for MultipleChoiceCard
+            else if ("MC".equals(type)){
+                MultipleChoiceCard mcCard = new MultipleChoiceCard(
+                    rs.getString("question"),
+                    rs.getString("subject")
+                );   
+                
+                //Fetch answer options for this MC card
+                try (PreparedStatement stmnt3 = 
+                conn.prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE card_id = ?")){
+                    stmnt3.setInt(1, id);
+                    try (ResultSet rs3 = stmnt3.executeQuery()){
+                        while (rs3.next()){
+                            String text = rs3.getString("text");
+                            boolean isCorrect = rs3.getBoolean("is_correct");
+                            mcCard.addAnswerOption(text, isCorrect);
+                        }
+                    }
+                }
+
+
+                //Set other fields
+                if (rs.getString("created_at") != null){
+                    mcCard.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
+                }
+                if (rs.getString("updated_at") != null){
+                    mcCard.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
+                }
+                
+
+                card = mcCard;
+                
+            }
+
+            return Optional.ofNullable(card);
+            
+            
+                
+        } catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+
+        
+
+
     }
 
     
     @Override
     public List<Card> findAll() {
-        try (Connection conn = ConnectionHelper.getConnection();
+        try (
+        Connection conn = ConnectionHelper.getConnection();
         PreparedStatement stmnt =conn.prepareStatement("SELECT * FROM flashcards");
         ResultSet rs = stmnt.executeQuery()){
             List<Card> cards = new ArrayList<>();
@@ -37,7 +126,7 @@ public class SQLiteCardRepo implements CardRepository {
                 //Logic for OpenQuestionCard
                 if ("OPEN".equals(type)) {
                     try (PreparedStatement stmnt2 =
-                    conn.prepareStatement("SELECT sample_answer FROM flashcards_open WHERE CARD_ID = ?")){
+                    conn.prepareStatement("SELECT sample_answer FROM flashcards_open WHERE card_id = ?")){
                         stmnt2.setInt(1, id);
                         try(ResultSet rs2 = stmnt2.executeQuery()){
                             if (rs2.next()) {
@@ -61,7 +150,7 @@ public class SQLiteCardRepo implements CardRepository {
 
                     //Fetch answer options for this MC card
                     try (PreparedStatement stmnt3 = 
-                    conn.prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE CARD_ID = ?")){
+                    conn.prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE card_id = ?")){
                         stmnt3.setInt(1, id);
                         try (ResultSet rs3 = stmnt3.executeQuery()){
                             while (rs3.next()){
