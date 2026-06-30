@@ -1,5 +1,6 @@
 package com.flashcards.repository;
 
+import com.flashcards.model.AnswerOption;
 import com.flashcards.model.Card;
 import com.flashcards.model.OpenQuestionCard;
 import com.flashcards.model.MultipleChoiceCard;
@@ -12,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class SQLiteCardRepo implements CardRepository {
     
@@ -86,8 +88,83 @@ public class SQLiteCardRepo implements CardRepository {
 
     @Override
     public void save(Card card) {
-        throw new UnsupportedOperationException("Unimplemented method 'save'");
+       //Logic to insert a card into the database
+       Connection conn = null;
+       try{
+            conn = ConnectionHelper.getConnection();
+       
+            
+            conn.setAutoCommit(false);
+            try (
+                PreparedStatement stmnt = conn.prepareStatement("""
+                INSERT INTO flashcards
+                (type, question, subject, created_by, created_at)
+                values (?,?,?,?,?)""", 
+                Statement.RETURN_GENERATED_KEYS)){
+                stmnt.setString(1, card.getType());
+                stmnt.setString(2, card.getQuestion());
+                stmnt.setString(3, card.getSubject());
+                stmnt.setLong(4, card.getCreatedBy());    
+                stmnt.setString(5, card.getCreatedAt().toString());
+                int rowsAffected = stmnt.executeUpdate();
+
+                if (rowsAffected == 0)
+                    throw new SQLException("Failed to create flashcard");
+
+                //get generated key
+                ResultSet generatedKeys = stmnt.getGeneratedKeys();
+                generatedKeys.next();
+                int key = generatedKeys.getInt(1);
+
+                //Logic for OpenQuestionCard
+                if (card instanceof OpenQuestionCard){
+                    try (PreparedStatement stmnt2 = conn.prepareStatement("""
+                        INSERT INTO flashcards_open
+                        (card_id, sample_answer)
+                        VALUES (?,?)""")){
+                        stmnt2.setInt(1, key);
+                        stmnt2.setString(2, ((OpenQuestionCard) card).getAnswer());
+                        stmnt2.execute();
+                    }
+                } else if (card instanceof MultipleChoiceCard){
+                    for (AnswerOption answer : ((MultipleChoiceCard) card).getAnswerOptions()){
+                        try (PreparedStatement stmnt3 = conn.prepareStatement("""
+                            INSERT INTO flashcards_mc_answer_options
+                            (card_id,text,is_correct)
+                            VALUES (?,?,?)""")){
+                            stmnt3.setInt(1,key);
+                            stmnt3.setString(2, answer.getText());
+                            stmnt3.setBoolean(3, answer.isCorrect());
+                            stmnt3.execute();
+                        }
+                    }
+                }
+            }
+            conn.commit();
+            
+       } catch (SQLException e) {
+            if (conn != null){
+                try{ conn.rollback(); }
+            
+            catch (SQLException rollbacke){ }
+            }
+            throw new RuntimeException(e);  
+        } finally {
+            if (conn != null) {
+                try{conn.close();} 
+                catch(SQLException finallye){ }
+                }    
+            }
+        
     }
+
+        
+        
+        
+       
+       
+       
+    
 
     @Override
     public void update(Card card) {
@@ -99,4 +176,4 @@ public class SQLiteCardRepo implements CardRepository {
     public void deleteById(int id) {
         throw new UnsupportedOperationException("Unimplemented method 'deleteById'");
     }
-}
+    }
