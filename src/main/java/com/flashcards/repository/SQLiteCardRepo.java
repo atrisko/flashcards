@@ -159,14 +159,19 @@ public class SQLiteCardRepo implements CardRepository {
                         stmnt2.execute();
                     }
                 } else if (card instanceof MultipleChoiceCard) {
+                    try (PreparedStatement stmnt3 = conn.prepareStatement("""
+                            INSERT INTO flashcards_mc (card_id) VALUES (?)""")) {
+                        stmnt3.setInt(1, key);
+                        stmnt3.execute();
+                    }
                     for (AnswerOption answer : ((MultipleChoiceCard) card).getAnswerOptions()) {
-                        try (PreparedStatement stmnt3 = conn.prepareStatement("""
+                        try (PreparedStatement stmnt4 = conn.prepareStatement("""
                                 INSERT INTO flashcards_mc_answer_options (card_id, text, is_correct)
                                 VALUES (?,?,?)""")) {
-                            stmnt3.setInt(1, key);
-                            stmnt3.setString(2, answer.getText());
-                            stmnt3.setBoolean(3, answer.isCorrect());
-                            stmnt3.execute();
+                            stmnt4.setInt(1, key);
+                            stmnt4.setString(2, answer.getText());
+                            stmnt4.setBoolean(3, answer.isCorrect());
+                            stmnt4.execute();
                         }
                     }
                 }
