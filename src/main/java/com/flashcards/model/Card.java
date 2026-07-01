@@ -59,6 +59,10 @@ public abstract class Card {
         this.updatedAt = updatedAt;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
 
     public abstract String getType();
 }

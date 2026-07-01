@@ -66,6 +66,7 @@ public class SQLiteCardRepo implements CardRepository {
             if (rs.getString("updated_at") != null) {
                 card.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
             }
+            card.setId(rs.getLong("id"));
         }
 
         return card;
