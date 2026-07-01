@@ -18,86 +18,74 @@ import java.time.LocalDateTime;
 
 public class SQLiteCardRepo implements CardRepository {
 
+    /**
+     * Maps a single row from the flashcards table to a fully populated Card object.
+     * Issues additional queries for subtype data (OPEN: sample_answer, MC: answer options).
+     * The Connection is passed in to reuse the existing transaction/connection.
+     * Returns null if the type is unknown.
+     */
+    private Card mapRowToCard(ResultSet rs, Connection conn) throws SQLException {
+        int id = rs.getInt("id");
+        String type = rs.getString("type");
+        Card card = null;
+
+        if ("OPEN".equals(type)) {
+            try (PreparedStatement stmnt2 = conn
+                    .prepareStatement("SELECT sample_answer FROM flashcards_open WHERE card_id = ?")) {
+                stmnt2.setInt(1, id);
+                try (ResultSet rs2 = stmnt2.executeQuery()) {
+                    if (rs2.next()) {
+                        card = new OpenQuestionCard(
+                                rs.getString("question"),
+                                rs.getString("subject"),
+                                rs2.getString("sample_answer"));
+                    }
+                }
+            }
+        } else if ("MC".equals(type)) {
+            MultipleChoiceCard mcCard = new MultipleChoiceCard(
+                    rs.getString("question"),
+                    rs.getString("subject"));
+            try (PreparedStatement stmnt3 = conn
+                    .prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE card_id = ?")) {
+                stmnt3.setInt(1, id);
+                try (ResultSet rs3 = stmnt3.executeQuery()) {
+                    while (rs3.next()) {
+                        mcCard.addAnswerOption(rs3.getString("text"), rs3.getBoolean("is_correct"));
+                    }
+                }
+            }
+            card = mcCard;
+        }
+
+        // Fields shared by all card types — set once, not per branch
+        if (card != null) {
+            if (rs.getString("created_at") != null) {
+                card.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
+            }
+            if (rs.getString("updated_at") != null) {
+                card.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
+            }
+        }
+
+        return card;
+    }
+
     @Override
     public Optional<Card> findById(int id) {
         try (
                 Connection conn = ConnectionHelper.getConnection();
-                PreparedStatement stmnt = conn.prepareStatement("SELECT * FROM flashcards WHERE id = ?");
-
-        ) {
+                PreparedStatement stmnt = conn.prepareStatement(
+                        "SELECT * FROM flashcards WHERE id = ?")) {
             stmnt.setInt(1, id);
             ResultSet rs = stmnt.executeQuery();
             if (!rs.next()) {
                 return Optional.empty();
             }
-
-            Card card = null;
-
-            String type = rs.getString("type");
-
-            // logic for OpenQuestionCard
-            if ("OPEN".equals(type)) {
-                try (
-                        PreparedStatement stmnt2 = conn
-                                .prepareStatement("SELECT sample_answer FROM flashcards_open WHERE card_id = ?")) {
-                    stmnt2.setInt(1, id);
-                    ResultSet rs2 = stmnt2.executeQuery();
-                    rs2.next();
-                    String sampleAnswer = rs2.getString("sample_answer");
-                    card = new OpenQuestionCard(
-                            rs.getString("question"),
-                            rs.getString("subject"),
-                            sampleAnswer);
-
-                }
-
-                // Set other fields
-                if (rs.getString("created_at") != null) {
-                    card.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
-                }
-                if (rs.getString("updated_at") != null) {
-                    card.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
-                }
-
-            }
-
-            // logic for MultipleChoiceCard
-            else if ("MC".equals(type)) {
-                MultipleChoiceCard mcCard = new MultipleChoiceCard(
-                        rs.getString("question"),
-                        rs.getString("subject"));
-
-                // Fetch answer options for this MC card
-                try (PreparedStatement stmnt3 = conn
-                        .prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE card_id = ?")) {
-                    stmnt3.setInt(1, id);
-                    try (ResultSet rs3 = stmnt3.executeQuery()) {
-                        while (rs3.next()) {
-                            String text = rs3.getString("text");
-                            boolean isCorrect = rs3.getBoolean("is_correct");
-                            mcCard.addAnswerOption(text, isCorrect);
-                        }
-                    }
-                }
-
-                // Set other fields
-                if (rs.getString("created_at") != null) {
-                    mcCard.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
-                }
-                if (rs.getString("updated_at") != null) {
-                    mcCard.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
-                }
-
-                card = mcCard;
-
-            }
-
-            return Optional.ofNullable(card);
-
+            return Optional.ofNullable(mapRowToCard(rs, conn));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
@@ -107,50 +95,12 @@ public class SQLiteCardRepo implements CardRepository {
                 PreparedStatement stmnt = conn.prepareStatement("SELECT * FROM flashcards");
                 ResultSet rs = stmnt.executeQuery()) {
             List<Card> cards = new ArrayList<>();
-
             while (rs.next()) {
-                int id = rs.getInt("id");
-                String type = rs.getString("type");
-
-                // Logic for OpenQuestionCard
-                if ("OPEN".equals(type)) {
-                    try (PreparedStatement stmnt2 = conn
-                            .prepareStatement("SELECT sample_answer FROM flashcards_open WHERE card_id = ?")) {
-                        stmnt2.setInt(1, id);
-                        try (ResultSet rs2 = stmnt2.executeQuery()) {
-                            if (rs2.next()) {
-                                String sampleAnswer = rs2.getString("sample_answer");
-                                cards.add(new OpenQuestionCard(
-                                        rs.getString("question"),
-                                        rs.getString("subject"),
-                                        sampleAnswer));
-                            }
-                        }
-                    }
-                }
-
-                // Logic for MultipleChoiceCard
-                else if ("MC".equals(type)) {
-                    MultipleChoiceCard mcCard = new MultipleChoiceCard(
-                            rs.getString("question"),
-                            rs.getString("subject"));
-
-                    // Fetch answer options for this MC card
-                    try (PreparedStatement stmnt3 = conn
-                            .prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE card_id = ?")) {
-                        stmnt3.setInt(1, id);
-                        try (ResultSet rs3 = stmnt3.executeQuery()) {
-                            while (rs3.next()) {
-                                String text = rs3.getString("text");
-                                boolean isCorrect = rs3.getBoolean("is_correct");
-                                mcCard.addAnswerOption(text, isCorrect);
-                            }
-                        }
-                    }
-                    cards.add(mcCard);
+                Card card = mapRowToCard(rs, conn);
+                if (card != null) {
+                    cards.add(card);
                 }
             }
-
             return cards;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -159,118 +109,51 @@ public class SQLiteCardRepo implements CardRepository {
 
     @Override
     public List<Card> findBySubject(String subject) {
-
         try (
                 Connection conn = ConnectionHelper.getConnection();
-                PreparedStatement stmnt = conn.prepareStatement("SELECT * FROM flashcards WHERE subject = ?")) {
-            List<Card> cards = new ArrayList<>();
-
+                PreparedStatement stmnt = conn.prepareStatement(
+                        "SELECT * FROM flashcards WHERE subject = ?")) {
             stmnt.setString(1, subject);
             ResultSet rs = stmnt.executeQuery();
-
+            List<Card> cards = new ArrayList<>();
             while (rs.next()) {
-                int id = rs.getInt("id");
-                String type = rs.getString("type");
-
-                // Logic for OpenQuestionCard
-                if ("OPEN".equals(type)) {
-                    try (PreparedStatement stmnt2 = conn
-                            .prepareStatement("SELECT sample_answer FROM flashcards_open WHERE card_id = ?")) {
-                        stmnt2.setInt(1, id);
-                        try (ResultSet rs2 = stmnt2.executeQuery()) {
-                            if (rs2.next()) {
-                                String sampleAnswer = rs2.getString("sample_answer");
-                                OpenQuestionCard oqCard = new OpenQuestionCard(
-                                        rs.getString("question"),
-                                        rs.getString("subject"),
-                                        sampleAnswer);
-                                //Fetch other fields
-                                if (rs.getString("created_at") != null) {
-                                    oqCard.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
-                                }
-                                if (rs.getString("updated_at") != null) {
-                                    oqCard.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
-                                }
-                                cards.add(oqCard);
-                            }
-                        }
-                    }
-                }
-
-                // Logic for MultipleChoiceCard
-                else if ("MC".equals(type)) {
-                    MultipleChoiceCard mcCard = new MultipleChoiceCard(
-                            rs.getString("question"),
-                            rs.getString("subject"));
-
-                    // Fetch answer options for this MC card
-                    try (PreparedStatement stmnt3 = conn
-                            .prepareStatement("SELECT * FROM flashcards_mc_answer_options WHERE card_id = ?")) {
-                        stmnt3.setInt(1, id);
-                        try (ResultSet rs3 = stmnt3.executeQuery()) {
-                            while (rs3.next()) {
-                                String text = rs3.getString("text");
-                                boolean isCorrect = rs3.getBoolean("is_correct");
-                                mcCard.addAnswerOption(text, isCorrect);
-                            }
-                        }
-                    }
-
-                    //Set other fields
-                    if (rs.getString("created_at") != null) {
-                        mcCard.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
-                    }
-                    if (rs.getString("updated_at") != null) {
-                        mcCard.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
-                    }
-
-                    cards.add(mcCard);
+                Card card = mapRowToCard(rs, conn);
+                if (card != null) {
+                    cards.add(card);
                 }
             }
-
             return cards;
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
     public void save(Card card) {
-        // Logic to insert a card into the database
         Connection conn = null;
         try {
             conn = ConnectionHelper.getConnection();
-
             conn.setAutoCommit(false);
-            try (
-                    PreparedStatement stmnt = conn.prepareStatement("""
-                            INSERT INTO flashcards
-                            (type, question, subject, created_by, created_at)
-                            values (?,?,?,?,?)""",
-                            Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement stmnt = conn.prepareStatement("""
+                    INSERT INTO flashcards (type, question, subject, created_by, created_at)
+                    VALUES (?,?,?,?,?)""", Statement.RETURN_GENERATED_KEYS)) {
                 stmnt.setString(1, card.getType());
                 stmnt.setString(2, card.getQuestion());
                 stmnt.setString(3, card.getSubject());
                 stmnt.setLong(4, card.getCreatedBy());
                 stmnt.setString(5, card.getCreatedAt().toString());
                 int rowsAffected = stmnt.executeUpdate();
-
-                if (rowsAffected == 0)
+                if (rowsAffected == 0) {
                     throw new SQLException("Failed to create flashcard");
-
-                // get generated key
+                }
+                // Get the DB-generated primary key to link subtype tables
                 ResultSet generatedKeys = stmnt.getGeneratedKeys();
                 generatedKeys.next();
                 int key = generatedKeys.getInt(1);
 
-                // Logic for OpenQuestionCard
                 if (card instanceof OpenQuestionCard) {
                     try (PreparedStatement stmnt2 = conn.prepareStatement("""
-                            INSERT INTO flashcards_open
-                            (card_id, sample_answer)
-                            VALUES (?,?)""")) {
+                            INSERT INTO flashcards_open (card_id, sample_answer) VALUES (?,?)""")) {
                         stmnt2.setInt(1, key);
                         stmnt2.setString(2, ((OpenQuestionCard) card).getAnswer());
                         stmnt2.execute();
@@ -278,8 +161,7 @@ public class SQLiteCardRepo implements CardRepository {
                 } else if (card instanceof MultipleChoiceCard) {
                     for (AnswerOption answer : ((MultipleChoiceCard) card).getAnswerOptions()) {
                         try (PreparedStatement stmnt3 = conn.prepareStatement("""
-                                INSERT INTO flashcards_mc_answer_options
-                                (card_id,text,is_correct)
+                                INSERT INTO flashcards_mc_answer_options (card_id, text, is_correct)
                                 VALUES (?,?,?)""")) {
                             stmnt3.setInt(1, key);
                             stmnt3.setString(2, answer.getText());
@@ -290,26 +172,16 @@ public class SQLiteCardRepo implements CardRepository {
                 }
             }
             conn.commit();
-
         } catch (SQLException e) {
             if (conn != null) {
-                try {
-                    conn.rollback();
-                }
-
-                catch (SQLException rollbacke) {
-                }
+                try { conn.rollback(); } catch (SQLException ignored) {}
             }
             throw new RuntimeException(e);
         } finally {
             if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException finallye) {
-                }
+                try { conn.close(); } catch (SQLException ignored) {}
             }
         }
-
     }
 
     @Override
