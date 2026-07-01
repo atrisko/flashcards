@@ -191,6 +191,50 @@ public class SQLiteCardRepo implements CardRepository {
 
     @Override
     public void deleteById(int id) {
-        throw new UnsupportedOperationException("Unimplemented method 'deleteById'");
+        Card card = findById(id).orElseThrow();
+        Connection conn = null;
+        try {
+            conn = ConnectionHelper.getConnection();
+            conn.setAutoCommit(false);
+            
+            if (card instanceof MultipleChoiceCard) {
+                    try (PreparedStatement stmnt2 = conn.prepareStatement("DELETE FROM flashcards_mc_answer_options WHERE card_id = ?")){
+                        stmnt2.setInt(1, id);
+                        stmnt2.executeUpdate();
+                    }
+                    try (
+                        PreparedStatement stmnt3 = conn.prepareStatement(
+                            "DELETE FROM flashcards_mc WHERE card_id = ?"
+                        )){
+                        stmnt3.setInt(1, id);
+                        stmnt3.executeUpdate();
+                    }
+                } else if (card instanceof OpenQuestionCard) {
+                    try (PreparedStatement stmnt4 = conn.prepareStatement(
+                        "DELETE FROM flashcards_open WHERE card_id = ?")) {
+                            stmnt4.setInt(1, id);
+                            stmnt4.executeUpdate();
+                        } 
+                }
+                try (PreparedStatement stmnt = conn.prepareStatement("DELETE FROM flashcards WHERE id = ?")) {
+                    stmnt.setInt(1, id);
+                    stmnt.executeUpdate();
+                }
+                conn.commit();
+        
+        
+            
+                
+
+            } catch (SQLException e) {
+                if (conn != null) {
+                    try { conn.rollback(); } catch (SQLException ignored) {}
+                }
+                throw new RuntimeException(e);
+            } finally {
+                if (conn != null) {
+                    try { conn.close(); } catch (SQLException ignored) {}
+                }
+            }
     }
 }
